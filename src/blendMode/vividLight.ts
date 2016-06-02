@@ -1,7 +1,7 @@
 /**
- * Overlay
+ * Vivid Light
  */
-class Overlay {
+class VividLight {
     
     constructor() {
         
@@ -11,15 +11,15 @@ class Overlay {
         
         let result: number = 0;
         
-        if( A <= 128 ) {
-            result = A*B/128;
+        if( B <= 128 ) {
+            result = A - (255 - A)*(255 - 2*B)/(2*B);
         }
         else {
-            result = 255 - (255-A)*(255-B)/128;
+            result = A + A*(2*B - 255)/(2*(255 - B));
         }
         
         return Math.round(result);  
     }
 }
 
-export { Overlay }
+export { VividLight }

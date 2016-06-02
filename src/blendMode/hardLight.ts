@@ -1,7 +1,7 @@
 /**
- * Overlay
+ * Hard Light
  */
-class Overlay {
+class HardLight {
     
     constructor() {
         
@@ -11,7 +11,7 @@ class Overlay {
         
         let result: number = 0;
         
-        if( A <= 128 ) {
+        if( B <= 128 ) {
             result = A*B/128;
         }
         else {
@@ -22,4 +22,4 @@ class Overlay {
     }
 }
 
-export { Overlay }
+export { HardLight }

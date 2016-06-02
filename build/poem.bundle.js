@@ -359,10 +359,11 @@ webpackJsonp([0,1],[
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(6), __webpack_require__(7)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, blur_1, overlay_1) {
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(6), __webpack_require__(8), __webpack_require__(9)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, sys_1, blur_1, _blendMode_1) {
 	    "use strict";
 	    var IMAGE_WIDTH = 400, IMAGE_HEIGHT = 400;
 	    var cvsO = document.getElementById('origin'), cvsG = document.getElementById('guass'), cvsA = document.getElementById('add'), ctxO = cvsO.getContext('2d'), ctxG = cvsG.getContext('2d'), ctxA = cvsA.getContext('2d');
+	    var SYS = new sys_1.systemFunction();
 	    window.draw = function () {
 	        var img = new Image();
 	        img.src = 'images/test.jpeg';
@@ -372,17 +373,72 @@ webpackJsonp([0,1],[
 	    };
 	    window.processGuass = function () {
 	        var gauss = new blur_1.Blur();
-	        gauss.Gaussian(ctxO, ctxG, IMAGE_WIDTH, IMAGE_WIDTH, 2);
+	        SYS.timeConsume('Gaussian Blur', function () {
+	            gauss.Gaussian(ctxO, ctxG, IMAGE_WIDTH, IMAGE_WIDTH, 2);
+	        });
 	    };
 	    window.processAdd = function () {
-	        var overlay = new overlay_1.Overlay();
-	        overlay.run(ctxO, ctxG, ctxA, IMAGE_WIDTH, IMAGE_HEIGHT);
+	        var blend = new _blendMode_1.blendMode(ctxO, ctxG, ctxA, IMAGE_WIDTH, IMAGE_HEIGHT);
+	        SYS.timeConsume('Overlay', function () {
+	            blend.Overlay();
+	        });
 	    };
 	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
 /***/ },
 /* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+	 * Global Function
+	 */
+	!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(7)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, timeConsume_1) {
+	    "use strict";
+	    var systemFunction = (function () {
+	        function systemFunction() {
+	        }
+	        systemFunction.prototype.timeConsume = function (name, func) {
+	            var tsr = new timeConsume_1.timeConsumptionRecoder(name);
+	            tsr.run(func);
+	        };
+	        return systemFunction;
+	    }());
+	    exports.systemFunction = systemFunction;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Time Consumption Recoder
+	     */
+	    var timeConsumptionRecoder = (function () {
+	        function timeConsumptionRecoder(name) {
+	            this.operationName = name;
+	        }
+	        timeConsumptionRecoder.prototype.run = function (func) {
+	            // Time Consuming: start
+	            var _start = new Date().getTime();
+	            func();
+	            // Time Consuming: end
+	            var _end = new Date().getTime();
+	            // Output time consumption
+	            console.info('Operation: ' + this.operationName);
+	            console.log(this.operationName + ' ->[Time-Consuming]: ' + (_end - _start) + 'ms');
+	        };
+	        return timeConsumptionRecoder;
+	    }());
+	    exports.timeConsumptionRecoder = timeConsumptionRecoder;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
@@ -410,8 +466,6 @@ webpackJsonp([0,1],[
 	            var tempB = [];
 	            var imageData = ctxSrc.getImageData(0, 0, w, h);
 	            var newData = ctxDst.createImageData(w, h);
-	            // Time Consuming: start
-	            var _start = new Date().getTime();
 	            // Get weight coefficient matrix
 	            var weightCoefficient = (function () {
 	                var dist0 = mathM / sigma;
@@ -470,11 +524,6 @@ webpackJsonp([0,1],[
 	                    newData.data[(j * 400 + i) * 4 + 3] = 255;
 	                }
 	            }
-	            // Time Consuming: end
-	            var _end = new Date().getTime();
-	            // Output time consumption
-	            console.info('Operation: Gaussian Blur');
-	            console.log('Gaussian Blur ->[Time-Consuming]: ' + (_end - _start) + 'ms');
 	            // Draw the image on the destination canvas
 	            ctxDst.putImageData(newData, 0, 0);
 	        };
@@ -485,7 +534,135 @@ webpackJsonp([0,1],[
 
 
 /***/ },
-/* 7 */
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+	 * blendMode
+	 */
+	!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(13), __webpack_require__(14), __webpack_require__(15), __webpack_require__(16), __webpack_require__(17), __webpack_require__(12), __webpack_require__(18), __webpack_require__(19), __webpack_require__(20), __webpack_require__(21), __webpack_require__(22), __webpack_require__(10), __webpack_require__(11), __webpack_require__(23), __webpack_require__(24), __webpack_require__(25), __webpack_require__(26)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, colorBurn_1, colorDodge_1, darken_1, difference_1, exclusion_1, hardLight_1, hardMix_1, lighten_1, linearBurn_1, linearDodge_1, linearLight_1, multiply_1, overlay_1, pinLight_1, screen_1, softLight_1, vividLight_1) {
+	    "use strict";
+	    // Main
+	    var blendMode = (function () {
+	        function blendMode(ctxA, ctxB, ctxDst, w, h) {
+	            this.ctxA = ctxA;
+	            this.ctxB = ctxB;
+	            this.ctxDst = ctxDst;
+	            this.imageDataA = ctxA.getImageData(0, 0, w, h);
+	            this.imageDataB = ctxB.getImageData(0, 0, w, h);
+	            this.w = w;
+	            this.h = h;
+	            this.dataLen = w * h;
+	        }
+	        blendMode.prototype.traverseImageData = function (func) {
+	            var newData = this.ctxDst.createImageData(this.w, this.h);
+	            for (var i = 0; i < this.dataLen; i++) {
+	                for (var j = 0; j < 3; j++) {
+	                    newData.data[i * 4 + j] = func(this.imageDataA.data[i * 4 + j], this.imageDataB.data[i * 4 + j]);
+	                }
+	                newData.data[i * 4 + 3] = 255;
+	            }
+	            this.ctxDst.putImageData(newData, 0, 0);
+	        };
+	        blendMode.prototype.ColorBurn = function () {
+	            var colorBurn = new colorBurn_1.ColorBurn();
+	            this.traverseImageData(colorBurn.run);
+	        };
+	        blendMode.prototype.ColorDodge = function () {
+	            var colorDodge = new colorDodge_1.ColorDodge();
+	            this.traverseImageData(colorDodge.run);
+	        };
+	        blendMode.prototype.Darken = function () {
+	            var darken = new darken_1.Darken();
+	            this.traverseImageData(darken.run);
+	        };
+	        blendMode.prototype.Difference = function () {
+	            var difference = new difference_1.Difference();
+	            this.traverseImageData(difference.run);
+	        };
+	        blendMode.prototype.Exclusion = function () {
+	            var exclusion = new exclusion_1.Exclusion();
+	            this.traverseImageData(exclusion.run);
+	        };
+	        blendMode.prototype.HardLight = function () {
+	            var hardLight = new hardLight_1.HardLight();
+	            this.traverseImageData(hardLight.run);
+	        };
+	        blendMode.prototype.HardMix = function () {
+	            var hardMix = new hardMix_1.HardMix();
+	            this.traverseImageData(hardMix.run);
+	        };
+	        blendMode.prototype.Lighten = function () {
+	            var lighten = new lighten_1.Lighten();
+	            this.traverseImageData(lighten.run);
+	        };
+	        blendMode.prototype.LinearBurn = function () {
+	            var linearBurn = new linearBurn_1.LinearBurn();
+	            this.traverseImageData(linearBurn.run);
+	        };
+	        blendMode.prototype.LinearDodge = function () {
+	            var linearDodge = new linearDodge_1.LinearDodge();
+	            this.traverseImageData(linearDodge.run);
+	        };
+	        blendMode.prototype.LinearLight = function () {
+	            var linearLight = new linearLight_1.LinearLight();
+	            this.traverseImageData(linearLight.run);
+	        };
+	        blendMode.prototype.Multiply = function () {
+	            var multiply = new multiply_1.Multiply();
+	            this.traverseImageData(multiply.run);
+	        };
+	        blendMode.prototype.Overlay = function () {
+	            var overlay = new overlay_1.Overlay();
+	            this.traverseImageData(overlay.run);
+	        };
+	        blendMode.prototype.PinLight = function () {
+	            var pinLight = new pinLight_1.PinLight();
+	            this.traverseImageData(pinLight.run);
+	        };
+	        blendMode.prototype.Screen = function () {
+	            var screen = new screen_1.Screen();
+	            this.traverseImageData(screen.run);
+	        };
+	        blendMode.prototype.SoftLight = function () {
+	            var softLight = new softLight_1.SoftLight();
+	            this.traverseImageData(softLight.run);
+	        };
+	        blendMode.prototype.VividLight = function () {
+	            var vividLight = new vividLight_1.VividLight();
+	            this.traverseImageData(vividLight.run);
+	        };
+	        return blendMode;
+	    }());
+	    exports.blendMode = blendMode;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Multiply
+	     */
+	    var Multiply = (function () {
+	        function Multiply() {
+	        }
+	        Multiply.prototype.run = function (A, B) {
+	            var result = 0;
+	            result = A * B / 255;
+	            return Math.round(result);
+	        };
+	        return Multiply;
+	    }());
+	    exports.Multiply = Multiply;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
@@ -496,35 +673,373 @@ webpackJsonp([0,1],[
 	    var Overlay = (function () {
 	        function Overlay() {
 	        }
-	        Overlay.prototype.run = function (ctxA, ctxB, ctxDst, w, h) {
-	            var oriData = ctxA.getImageData(0, 0, w, h);
-	            var gasData = ctxB.getImageData(0, 0, w, h);
-	            var newData = ctxDst.createImageData(400, 400);
-	            var dataLen = h * w;
-	            // Time Consuming: start
-	            var _start = new Date().getTime();
-	            // Read image data and do the overlay
-	            for (var i = 0; i < dataLen; i++) {
-	                for (var j = 0; j < 3; j++) {
-	                    if (gasData.data[i * 4 + j] <= 128) {
-	                        newData.data[i * 4 + j] = Math.round(oriData.data[i * 4 + j] * gasData.data[i * 4 + j] / 128);
-	                    }
-	                    else {
-	                        newData.data[i * 4 + j] = 255 - Math.round((255 - oriData.data[i * 4 + j]) * (255 - gasData.data[i * 4 + j]) / 128);
-	                    }
-	                }
-	                newData.data[i * 4 + 3] = 255;
+	        Overlay.prototype.run = function (A, B) {
+	            var result = 0;
+	            if (A <= 128) {
+	                result = A * B / 128;
 	            }
-	            // Time Consuming: end
-	            var _end = new Date().getTime();
-	            // Output time consumption
-	            console.info('Operation: Overlay');
-	            console.log('Overlay ->[Time-Consuming]: ' + (_end - _start) + 'ms');
-	            ctxDst.putImageData(newData, 0, 0);
+	            else {
+	                result = 255 - (255 - A) * (255 - B) / 128;
+	            }
+	            return Math.round(result);
 	        };
 	        return Overlay;
 	    }());
 	    exports.Overlay = Overlay;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Hard Light
+	     */
+	    var HardLight = (function () {
+	        function HardLight() {
+	        }
+	        HardLight.prototype.run = function (A, B) {
+	            var result = 0;
+	            if (B <= 128) {
+	                result = A * B / 128;
+	            }
+	            else {
+	                result = 255 - (255 - A) * (255 - B) / 128;
+	            }
+	            return Math.round(result);
+	        };
+	        return HardLight;
+	    }());
+	    exports.HardLight = HardLight;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Color Burn
+	     */
+	    var ColorBurn = (function () {
+	        function ColorBurn() {
+	        }
+	        ColorBurn.prototype.run = function (A, B) {
+	            var result = 0;
+	            result = A - (255 - A) * (255 - B) / B;
+	            return Math.round(result);
+	        };
+	        return ColorBurn;
+	    }());
+	    exports.ColorBurn = ColorBurn;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Color Dodge
+	     */
+	    var ColorDodge = (function () {
+	        function ColorDodge() {
+	        }
+	        ColorDodge.prototype.run = function (A, B) {
+	            var result = 0;
+	            result = A + A * B / (255 - B);
+	            return Math.round(result);
+	        };
+	        return ColorDodge;
+	    }());
+	    exports.ColorDodge = ColorDodge;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Darken
+	     */
+	    var Darken = (function () {
+	        function Darken() {
+	        }
+	        Darken.prototype.run = function (A, B) {
+	            return Math.min(A, B);
+	        };
+	        return Darken;
+	    }());
+	    exports.Darken = Darken;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 16 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Difference
+	     */
+	    var Difference = (function () {
+	        function Difference() {
+	        }
+	        Difference.prototype.run = function (A, B) {
+	            return Math.abs(A - B);
+	        };
+	        return Difference;
+	    }());
+	    exports.Difference = Difference;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Exclusion
+	     */
+	    var Exclusion = (function () {
+	        function Exclusion() {
+	        }
+	        Exclusion.prototype.run = function (A, B) {
+	            var result = 0;
+	            result = A + B - A * B / 128;
+	            return Math.round(result);
+	        };
+	        return Exclusion;
+	    }());
+	    exports.Exclusion = Exclusion;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Hard Mix
+	     */
+	    var HardMix = (function () {
+	        function HardMix() {
+	        }
+	        HardMix.prototype.run = function (A, B) {
+	            if ((A + B) >= 255) {
+	                return 255;
+	            }
+	            else {
+	                return 0;
+	            }
+	        };
+	        return HardMix;
+	    }());
+	    exports.HardMix = HardMix;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Lighten
+	     */
+	    var Lighten = (function () {
+	        function Lighten() {
+	        }
+	        Lighten.prototype.run = function (A, B) {
+	            return Math.max(A, B);
+	        };
+	        return Lighten;
+	    }());
+	    exports.Lighten = Lighten;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Linear Burn
+	     */
+	    var LinearBurn = (function () {
+	        function LinearBurn() {
+	        }
+	        LinearBurn.prototype.run = function (A, B) {
+	            return (A + B) < 255 ? 0 : (A + B - 255);
+	        };
+	        return LinearBurn;
+	    }());
+	    exports.LinearBurn = LinearBurn;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Linear Dodge
+	     */
+	    var LinearDodge = (function () {
+	        function LinearDodge() {
+	        }
+	        LinearDodge.prototype.run = function (A, B) {
+	            return (A + B) > 255 ? 255 : (A + B);
+	        };
+	        return LinearDodge;
+	    }());
+	    exports.LinearDodge = LinearDodge;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Linear Light
+	     */
+	    var LinearLight = (function () {
+	        function LinearLight() {
+	        }
+	        LinearLight.prototype.run = function (A, B) {
+	            return (A + B * 2 - 255);
+	        };
+	        return LinearLight;
+	    }());
+	    exports.LinearLight = LinearLight;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Pin Light
+	     */
+	    var PinLight = (function () {
+	        function PinLight() {
+	        }
+	        PinLight.prototype.run = function (A, B) {
+	            if (B <= 128) {
+	                return Math.min(A, 2 * B);
+	            }
+	            else {
+	                return Math.min(A, 2 * B - 255);
+	            }
+	        };
+	        return PinLight;
+	    }());
+	    exports.PinLight = PinLight;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Screen
+	     */
+	    var Screen = (function () {
+	        function Screen() {
+	        }
+	        Screen.prototype.run = function (A, B) {
+	            var result = 0;
+	            result = 255 - (255 - A) * (255 - B) / 255;
+	            return Math.round(result);
+	        };
+	        return Screen;
+	    }());
+	    exports.Screen = Screen;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 25 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Soft Light
+	     */
+	    var SoftLight = (function () {
+	        function SoftLight() {
+	        }
+	        SoftLight.prototype.run = function (A, B) {
+	            var result = 0;
+	            if (B <= 128) {
+	                result = A * B / 128 + Math.pow(A / 255, 2) * (255 - 2 * B);
+	            }
+	            else {
+	                result = A * (255 - B) / 128 + Math.sqrt(A / 255) * (2 * B - 255);
+	            }
+	            return Math.round(result);
+	        };
+	        return SoftLight;
+	    }());
+	    exports.SoftLight = SoftLight;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    /**
+	     * Vivid Light
+	     */
+	    var VividLight = (function () {
+	        function VividLight() {
+	        }
+	        VividLight.prototype.run = function (A, B) {
+	            var result = 0;
+	            if (B <= 128) {
+	                result = A - (255 - A) * (255 - 2 * B) / (2 * B);
+	            }
+	            else {
+	                result = A + A * (2 * B - 255) / (2 * (255 - B));
+	            }
+	            return Math.round(result);
+	        };
+	        return VividLight;
+	    }());
+	    exports.VividLight = VividLight;
 	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 

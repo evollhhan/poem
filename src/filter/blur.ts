@@ -26,10 +26,7 @@ class Blur {
 		let tempB : number[] = [];
 		
 		let imageData : any = ctxSrc.getImageData(0, 0, w, h);
-		let newData : any = ctxDst.createImageData(w, h);		
-		
-		// Time Consuming: start
-		let _start : number = new Date().getTime();
+		let newData : any = ctxDst.createImageData(w, h);
 		
 		// Get weight coefficient matrix
 		let weightCoefficient : number[] = (function() {
@@ -100,13 +97,6 @@ class Blur {
 				newData.data[(j*400+i)*4 + 3] = 255;				
 			}
 		}
-		
-		// Time Consuming: end
-		let _end : number = new Date().getTime();
-		
-		// Output time consumption
-		console.info('Operation: Gaussian Blur');
-		console.log('Gaussian Blur ->[Time-Consuming]: ' + (_end - _start) + 'ms' );
 		
 		// Draw the image on the destination canvas
 		ctxDst.putImageData(newData, 0, 0);

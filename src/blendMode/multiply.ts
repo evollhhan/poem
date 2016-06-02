@@ -1,7 +1,7 @@
 /**
- * Overlay
+ * Multiply
  */
-class Overlay {
+class Multiply {
     
     constructor() {
         
@@ -11,15 +11,10 @@ class Overlay {
         
         let result: number = 0;
         
-        if( A <= 128 ) {
-            result = A*B/128;
-        }
-        else {
-            result = 255 - (255-A)*(255-B)/128;
-        }
+        result = A*B/255;
         
         return Math.round(result);  
     }
 }
 
-export { Overlay }
+export { Multiply }
