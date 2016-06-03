@@ -46,7 +46,7 @@ class blendMode {
         this.dataLen = w * h;
     }
     
-    traverseImageData(func: any) {
+    private traverseImageData(func: any) {
         let newData = this.ctxDst.createImageData(this.w, this.h);
         for( let i = 0; i < this.dataLen; i++ ) {
             for( let j = 0; j < 3; j++ ) {
