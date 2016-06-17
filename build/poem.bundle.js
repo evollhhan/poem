@@ -2,9 +2,22 @@ webpackJsonp([0,1],[
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(7), __webpack_require__(1), __webpack_require__(5)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, Router_1) {
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+	 * APP: POEM
+	 *
+	 * @version: 0.0.2(dev)
+	 * @last update: 2016-06-17
+	 * @By Pathen
+	 * @:)
+	 **/
+	!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(11), __webpack_require__(5), __webpack_require__(9)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, router_1, test1_1) {
 	    "use strict";
-	    var router = new Router_1.Router();
+	    /**
+	     * Page Router
+	     *
+	     * define page url width related template and function
+	     */
+	    var router = new router_1.Router();
 	    router.config({
 	        errorPageURL: '/404',
 	        errorPagePATH: '404.html'
@@ -15,11 +28,12 @@ webpackJsonp([0,1],[
 	    })
 	        .when({
 	        url: '/test1',
-	        tpl: 'test1.html'
+	        tpl: 'test1.html',
+	        ctrl: test1_1.test1
 	    })
 	        .when({
 	        url: '/test2',
-	        tpl: 'test2.html'
+	        tpl: 'test2.html',
 	    })
 	        .on();
 	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
@@ -29,20 +43,232 @@ webpackJsonp([0,1],[
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(2), __webpack_require__(3), __webpack_require__(4)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, httpServer_1, compile_1, customSetting_1) {
+	    "use strict";
+	    var Router = (function () {
+	        function Router() {
+	            if (window.location.hash === '')
+	                window.location.hash = '#/';
+	            this.origin = window.location.origin;
+	            var viewer = document.getElementsByTagName('po-view');
+	            if (viewer.length > 1) {
+	                console.error('Router Error: Two or more <po-view> in this document.');
+	                return;
+	            }
+	            else {
+	                this.viewer = viewer[0];
+	            }
+	            this.urlBase = {};
+	            this.ctrlBase = {};
+	            this.errorPageURL = '/';
+	            this.errorPagePATH = '';
+	            this.cs = new customSetting_1.CustomSetting();
+	            this.cp = new compile_1.Compile();
+	        }
+	        Router.prototype.HashChange = function (e) {
+	            var url = e.newURL.replace(this.origin + '/#', '').match(/[^\?]*/g)[0];
+	            var process = (function (that) {
+	                if (!that.urlBase || !that.urlBase['/']) {
+	                    return function (url) {
+	                        console.error('Router Error: no "/" page is defined.');
+	                    };
+	                }
+	                else {
+	                    return function (url) {
+	                        if (!that.urlBase.hasOwnProperty(url)) {
+	                            window.location.hash = that.errorPageURL;
+	                            return;
+	                        }
+	                        var http = new httpServer_1.HttpServer();
+	                        http.Get({
+	                            url: './templates/' + that.urlBase[url],
+	                            progress: function (evt) {
+	                                that.cs.pageLoadProgress && that.cs.pageLoadProgress(evt);
+	                            },
+	                            success: function (data) {
+	                                that.cp.update(that.viewer, data, that.ctrlBase[url]);
+	                            }
+	                        });
+	                    };
+	                }
+	            })(this);
+	            process(url);
+	        };
+	        Router.prototype.config = function (opt) {
+	            this.errorPageURL = opt.errorPageURL || this.errorPageURL;
+	            this.errorPagePATH = opt.errorPagePATH || this.errorPagePATH;
+	            if (this.errorPageURL !== '/')
+	                this.urlBase[this.errorPageURL] = this.errorPagePATH;
+	            return this;
+	        };
+	        Router.prototype.when = function (router) {
+	            this.urlBase[router.url] = router.tpl;
+	            router.ctrl && (this.ctrlBase[router.url] = router.ctrl);
+	            return this;
+	        };
+	        Router.prototype.on = function () {
+	            var that = this;
+	            window.onhashchange = (function (that) {
+	                return function (e) {
+	                    that.HashChange(e);
+	                };
+	            })(that);
+	            var currentURL = {};
+	            currentURL.newURL = window.location.href;
+	            this.HashChange(currentURL);
+	        };
+	        Router.prototype.off = function () {
+	            window.onhashchange = null;
+	        };
+	        return Router;
+	    }());
+	    exports.Router = Router;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    var HttpServer = (function () {
+	        function HttpServer() {
+	            this.xhr = new XMLHttpRequest();
+	        }
+	        HttpServer.prototype.Get = function (opt) {
+	            this.AsyncRequest(opt.success);
+	            this.Progress(opt.progress);
+	            if (typeof (opt.data) === 'object') {
+	                for (var i in opt.data) {
+	                    opt.url += (opt.url.indexOf('?') === -1) ? '?' : '&';
+	                    opt.url += encodeURIComponent(i) + '=' + encodeURIComponent(opt.data[i]);
+	                }
+	            }
+	            this.xhr.open('get', opt.url, true);
+	            this.xhr.send();
+	        };
+	        HttpServer.prototype.Post = function (opt) {
+	            this.AsyncRequest(opt.success);
+	            this.xhr.open('post', opt.url, true);
+	            this.xhr.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+	            this.xhr.send(JSON.stringify(opt.data));
+	        };
+	        HttpServer.prototype.Abort = function () {
+	            this.xhr.abort();
+	        };
+	        HttpServer.prototype.AsyncRequest = function (success) {
+	            var that = this;
+	            var stateChange = (function (xhr, success) {
+	                return function () {
+	                    if (this.readyState === 4) {
+	                        xhr.Response(success);
+	                    }
+	                };
+	            })(that, success);
+	            this.xhr.onreadystatechange = stateChange;
+	        };
+	        HttpServer.prototype.Response = function (success) {
+	            if (this.xhr.status >= 200 && this.xhr.status < 300 || this.xhr.status == 304) {
+	                success && success(this.xhr.responseText);
+	            }
+	            else {
+	                console.error('HttpServer Error: ' + this.xhr.status);
+	            }
+	        };
+	        HttpServer.prototype.Progress = function (progress) {
+	            var updateProgress = (function (progress) {
+	                return function (evt) {
+	                    progress && progress(evt);
+	                };
+	            })(progress);
+	            this.xhr.onprogress = updateProgress;
+	        };
+	        HttpServer.prototype.SetRequestHeader = function () {
+	            // Todo    
+	        };
+	        return HttpServer;
+	    }());
+	    exports.HttpServer = HttpServer;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+	 * Compile
+	 */
+	!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    var Compile = (function () {
+	        function Compile() {
+	        }
+	        Compile.prototype.update = function (viewer, html, controller) {
+	            if (controller) {
+	                var param = controller.$extend;
+	                controller.$run(param[0]);
+	            }
+	            else {
+	                viewer.innerHTML = html;
+	            }
+	        };
+	        return Compile;
+	    }());
+	    exports.Compile = Compile;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+	 * Custom System Setting
+	 */
+	!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    var CustomSetting = (function () {
+	        function CustomSetting() {
+	        }
+	        CustomSetting.prototype.pageLoadProgress = function (evt) {
+	            var dom = document.querySelector('.pageProgress'), progress = Math.round(evt.loaded / evt.total * 100);
+	            dom.style.width = progress + '%';
+	            if (progress === 100) {
+	                setTimeout(function () {
+	                    dom.style.display = 'none';
+	                    setTimeout(function () {
+	                        dom.style.width = '0';
+	                        dom.style.display = 'block';
+	                    }, 100);
+	                }, 200);
+	            }
+	        };
+	        return CustomSetting;
+	    }());
+	    exports.CustomSetting = CustomSetting;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(2);
+	var content = __webpack_require__(6);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(4)(content, {});
+	var update = __webpack_require__(8)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
 		// When the styles change, update the <style> tags
 		if(!content.locals) {
-			module.hot.accept("!!./../node_modules/css-loader/index.js!./../node_modules/autoprefixer-loader/index.js!./../node_modules/stylus-loader/index.js!./main.styl", function() {
-				var newContent = require("!!./../node_modules/css-loader/index.js!./../node_modules/autoprefixer-loader/index.js!./../node_modules/stylus-loader/index.js!./main.styl");
+			module.hot.accept("!!./../../node_modules/css-loader/index.js!./../../node_modules/autoprefixer-loader/index.js!./../../node_modules/stylus-loader/index.js!./main.styl", function() {
+				var newContent = require("!!./../../node_modules/css-loader/index.js!./../../node_modules/autoprefixer-loader/index.js!./../../node_modules/stylus-loader/index.js!./main.styl");
 				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 				update(newContent);
 			});
@@ -52,21 +278,21 @@ webpackJsonp([0,1],[
 	}
 
 /***/ },
-/* 2 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(3)();
+	exports = module.exports = __webpack_require__(7)();
 	// imports
 
 
 	// module
-	exports.push([module.id, "body {\n  font-family: 'Arial';\n}\ncanvas {\n  margin: 20px;\n  border: 1px solid #000;\n}\n", ""]);
+	exports.push([module.id, "body {\n  font-family: 'Arial';\n  margin: 0;\n  padding: 0;\n}\ncanvas {\n  margin: 20px;\n  border: 1px solid #000;\n}\n", ""]);
 
 	// exports
 
 
 /***/ },
-/* 3 */
+/* 7 */
 /***/ function(module, exports) {
 
 	/*
@@ -122,7 +348,7 @@ webpackJsonp([0,1],[
 
 
 /***/ },
-/* 4 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -374,177 +600,79 @@ webpackJsonp([0,1],[
 
 
 /***/ },
-/* 5 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
-	    "use strict";
-	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-	// let IMAGE_WIDTH	: number = 400,
-	// 	IMAGE_HEIGHT: number = 400;
-	// let cvsO = <HTMLCanvasElement> document.getElementById('origin'),
-	// 	cvsG = <HTMLCanvasElement> document.getElementById('guass'),
-	// 	cvsA = <HTMLCanvasElement> document.getElementById('add'),
-	// 	ctxO = cvsO.getContext('2d'),
-	// 	ctxG = cvsG.getContext('2d'),
-	// 	ctxA = cvsA.getContext('2d');
-	// let SYS = new systemFunction();
-	// (<any>window).draw = function() {	
-	// 	let img = new Image();
-	// 	img.src = 'images/test.jpeg';
-	// 	img.onload = function() {
-	// 		ctxO.drawImage(img, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);		
-	// 	}
-	// };
-	// (<any>window).processGuass = function () {
-	// 	let gauss = new Blur();
-	// 	SYS.timeConsume('Gaussian Blur', function(){
-	// 		gauss.Gaussian(ctxO, ctxG, IMAGE_WIDTH, IMAGE_WIDTH, 2);
-	// 	});	
-	// };
-	// (<any>window).processAdd = function () {
-	// 	let blend = new blendMode(ctxO, ctxG, ctxA, IMAGE_WIDTH, IMAGE_HEIGHT);
-	// 	SYS.timeConsume('Overlay', function(){
-	// 		blend.Overlay();	
-	// 	});
-	// }
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+
+	// load the styles
+	var content = __webpack_require__(10);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(8)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!./../../node_modules/css-loader/index.js!./../../node_modules/autoprefixer-loader/index.js!./../../node_modules/stylus-loader/index.js!./components.styl", function() {
+				var newContent = require("!!./../../node_modules/css-loader/index.js!./../../node_modules/autoprefixer-loader/index.js!./../../node_modules/stylus-loader/index.js!./components.styl");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(7)();
+	// imports
+
+
+	// module
+	exports.push([module.id, ".pageProgress {\n  position: absolute;\n  top: 0;\n  z-index: 9999;\n  width: 0;\n  height: 3px;\n  background: #09f;\n  box-shadow: 0 1px 8px #069;\n  -webkit-transition: 0.2s all ease;\n  transition: 0.2s all ease;\n}\n", ""]);
+
+	// exports
 
 
 /***/ },
-/* 6 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+	 * test1
+	 */
+	!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(12)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, poem_1) {
 	    "use strict";
-	    var HttpServer = (function () {
-	        function HttpServer() {
-	            this.xhr = new XMLHttpRequest();
+	    var test1 = poem_1.poem({
+	        $id: 'test1',
+	        welcome: 'Hello World',
+	        $extend: ['Blur'],
+	        $run: function (blur) {
+	            console.log(blur);
 	        }
-	        HttpServer.prototype.Get = function (opt) {
-	            this.AsyncRequest(opt.success);
-	            if (typeof (opt.data) === 'object') {
-	                for (var i in opt.data) {
-	                    opt.url += (opt.url.indexOf('?') === -1) ? '?' : '&';
-	                    opt.url += encodeURIComponent(i) + '=' + encodeURIComponent(opt.data[i]);
-	                }
-	            }
-	            this.xhr.open('get', opt.url, true);
-	            this.xhr.send();
-	        };
-	        HttpServer.prototype.Post = function (opt) {
-	            this.AsyncRequest(opt.success);
-	            this.xhr.open('post', opt.url, true);
-	            this.xhr.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
-	            this.xhr.send(JSON.stringify(opt.data));
-	        };
-	        HttpServer.prototype.Abort = function () {
-	            this.xhr.abort();
-	        };
-	        HttpServer.prototype.AsyncRequest = function (success) {
-	            var that = this;
-	            var stateChange = (function (xhr, success) {
-	                return function () {
-	                    if (this.readyState === 4) {
-	                        xhr.Response(success);
-	                    }
-	                };
-	            })(that, success);
-	            this.xhr.onreadystatechange = stateChange;
-	        };
-	        HttpServer.prototype.Response = function (success) {
-	            if (this.xhr.status >= 200 && this.xhr.status < 300 || this.xhr.status == 304) {
-	                success && success(this.xhr.responseText);
-	            }
-	            else {
-	                console.error('HttpServer Error: ' + this.xhr.status);
-	            }
-	        };
-	        HttpServer.prototype.SetRequestHeader = function () {
-	            // Todo    
-	        };
-	        return HttpServer;
-	    }());
-	    exports.HttpServer = HttpServer;
+	    });
+	    exports.test1 = test1;
 	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
 /***/ },
-/* 7 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(6)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, httpServer_1) {
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+	 * Poem View Module Maker
+	 */
+	!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
 	    "use strict";
-	    var Router = (function () {
-	        function Router() {
-	            if (window.location.hash === '')
-	                window.location.hash = '#/';
-	            this.origin = window.location.origin;
-	            var viewer = document.getElementsByTagName('po-view');
-	            if (viewer.length > 1) {
-	                console.error('Router Error: Two or more <po-view> in this document.');
-	                return;
-	            }
-	            else {
-	                this.viewer = viewer[0];
-	            }
-	            this.urlBase = {};
-	            this.errorPageURL = '/';
-	            this.errorPagePATH = '';
-	        }
-	        Router.prototype.HashChange = function (e) {
-	            var url = e.newURL.replace(this.origin + '/#', '').match(/[^\?]*/g)[0];
-	            var process = (function (that) {
-	                if (!that.urlBase || !that.urlBase['/']) {
-	                    return function (url) {
-	                        console.error('Router Error: no "/" page is defined.');
-	                    };
-	                }
-	                else {
-	                    return function (url) {
-	                        if (!that.urlBase.hasOwnProperty(url)) {
-	                            window.location.hash = that.errorPageURL;
-	                            return;
-	                        }
-	                        var http = new httpServer_1.HttpServer();
-	                        http.Get({
-	                            url: './templates/' + that.urlBase[url],
-	                            success: function (data) {
-	                                that.viewer.innerHTML = data;
-	                            }
-	                        });
-	                    };
-	                }
-	            })(this);
-	            process(url);
-	        };
-	        Router.prototype.config = function (opt) {
-	            this.errorPageURL = opt.errorPageURL || this.errorPageURL;
-	            this.errorPagePATH = opt.errorPagePATH || this.errorPagePATH;
-	            if (this.errorPageURL !== '/')
-	                this.urlBase[this.errorPageURL] = this.errorPagePATH;
-	            return this;
-	        };
-	        Router.prototype.when = function (router) {
-	            this.urlBase[router.url] = router.tpl;
-	            return this;
-	        };
-	        Router.prototype.on = function () {
-	            var that = this;
-	            window.onhashchange = (function (that) {
-	                return function (e) {
-	                    that.HashChange(e);
-	                };
-	            })(that);
-	            var currentURL = {};
-	            currentURL.newURL = window.location.href;
-	            this.HashChange(currentURL);
-	        };
-	        Router.prototype.off = function () {
-	            window.onhashchange = null;
-	        };
-	        return Router;
-	    }());
-	    exports.Router = Router;
+	    var maker = function (prop) {
+	        return prop;
+	    };
+	    exports.poem = maker;
 	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 

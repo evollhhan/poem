@@ -2,7 +2,7 @@
  * Global Function
  */
 
-import { timeConsumptionRecoder as TSR } from './timeConsume'
+import { timeConsumptionRecoder as TSR } from './sys/timeConsume'
 
 class systemFunction {
     
@@ -17,4 +17,4 @@ class systemFunction {
     
 }
 
-export { systemFunction };
+export { systemFunction }

@@ -1,10 +1,17 @@
 /**
  * HttpServer
+ * 
+ * TODO: 1. Deal with Cache
+ *       2. SetRequestHeader
+ *       3. ArrayBuffer
+ *       4. Timeout
+ *       5. File API - Fast upload
  */
 interface HttpOption {
     url: string;
     data?: any;
     success?: any;
+    progress?: any;
     // async?: boolean;  *In the main thread will always be TRUE
 } 
 
@@ -18,6 +25,7 @@ class HttpServer {
     
     Get(opt: HttpOption) {
        this.AsyncRequest(opt.success);
+       this.Progress(opt.progress);
        if( typeof(opt.data) === 'object' ) {
            for( let i in opt.data ) {
                opt.url += (opt.url.indexOf('?') === -1)? '?' : '&';
@@ -45,7 +53,7 @@ class HttpServer {
             return function() {
                 if( this.readyState === 4 ) {
                     xhr.Response(success);
-                }  
+                } 
             }                      
         })(that, success);
         this.xhr.onreadystatechange = stateChange;
@@ -58,6 +66,15 @@ class HttpServer {
         else {
             console.error('HttpServer Error: ' + this.xhr.status);
         }
+    }
+
+    private Progress(progress?: any) {
+        let updateProgress = (function(progress?: any) {
+            return function(evt: any) {
+                progress && progress(evt);
+            }            
+        })(progress);
+        this.xhr.onprogress = updateProgress;
     }
     
     private SetRequestHeader() {

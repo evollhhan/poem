@@ -2,17 +2,24 @@
  * Router
  */
 import { HttpServer } from './httpServer';
+import { Compile } from './compile';
+import { CustomSetting } from './customSetting';
 
 interface RouterArg {
     url: string;
     tpl: string;
+    ctrl?: any;
 }
 
 class Router {
     
+    cs: CustomSetting;
+    cp: Compile;
+
     origin: string;
-    urlBase: any;
     viewer: any;
+    urlBase: any;
+    ctrlBase: any;
     
     /** 
      * @errorPage
@@ -37,8 +44,11 @@ class Router {
             this.viewer = viewer[0];
         }
         this.urlBase = {};
+        this.ctrlBase = {};
         this.errorPageURL = '/';
         this.errorPagePATH = '';
+        this.cs = new CustomSetting();
+        this.cp = new Compile();
     }
     
     private HashChange(e: any) {
@@ -58,9 +68,12 @@ class Router {
                     let http = new HttpServer();
                     http.Get({
                         url: './templates/' + that.urlBase[url],
+                        progress: function(evt) {
+                            that.cs.pageLoadProgress && that.cs.pageLoadProgress(evt);
+                        },
                         success: function(data) {
-                            that.viewer.innerHTML = data;
-                        } 
+                            that.cp.update(that.viewer, data, that.ctrlBase[url]);
+                        }
                     });                 
                 }
             }
@@ -77,6 +90,7 @@ class Router {
     
     when(router: RouterArg) {
         this.urlBase[router.url] = router.tpl;
+        router.ctrl && (this.ctrlBase[router.url] = router.ctrl);
         return this;
     }
     
